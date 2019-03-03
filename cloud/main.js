@@ -425,16 +425,16 @@ Parse.Cloud.define("createMsgFromUnknow", function(request, response) {
 });
 
 ////Very Good/////////////////////////////////////////////////////////////
-function getReplyMsg(request, response) {
-  var MSG = Parse.Object.extend("Message");
-  var query = new Parse.Query(MSG);
-  var msgFromUser = request.params.msg;
+function getTags(request, response) {
+  var tag = Parse.Object.extend("Tag");
+  var query = new Parse.Query(tag);
+  var TagName = request.params.name;
   ////console.log("request:" + request.params["msg"]);
   //console.log("msg from user:" + msgFromUser);
-  if (msgFromUser == null) {
+  if (TagName == null) {
     response.error("request null values");
   } else {
-    query.equalTo("msg", msgFromUser);
+    query.equalTo("name", Tagname);
     query.limit(appQueryLimit);
     query.find({
       success: function(msgResponse) {
@@ -474,142 +474,4 @@ function getReplyMsg(request, response) {
       }
     });
   }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-function chain1(response){
-  var MSG = Parse.Object.extend("Message");
-  var UNMSG = Parse.Object.extend("UnknownMessage");
-  var query = new Parse.Query(UNMSG);
-  query.limit(5000);
-  query.notEqualTo('replyMsg', null);
-  query.find({
-    useMasterKey: true
-  }).then(function(res) {
-      var objs = [];
-      var removeobjs = [];
-      if(res.length == 0){
-        response.success("chain1 done");
-        console.log(" chain1 res 0");
-
-      }else {
-        console.log(" chain1 res.length:" +res.length);
-
-        for (var i = 0; i < res.length; i++) {
-          var obj = res[i];
-          var msgArray = res[i].get('msg');
-          var replyMsgArray = res[i].get('replyMsg');
-          var msgChar = msgArray.join('');
-          var wc = wordcut.cut(msgChar)
-          let arr = wc.split('|');
-          var msgObj = new MSG();
-          msgObj.set("wordsArray", arr);
-          msgObj.set("msg", msgArray);
-          msgObj.set("replyMsg", replyMsgArray);
-
-          objs.push(msgObj);
-          removeobjs.push(obj);
-        }
-        Parse.Object.saveAll(objs, {
-          success: function(result) {
-            console.log("saveAll done");
-            Parse.Object.destroyAll(removeobjs, {
-              success: function(result) {
-                //response.success("chain1 done and run chain2");
-                chain2(function(r){
-
-                });
-                console.log(" chain1 done and run chain2");
-              },
-              error: function(err) {
-                console.log(" chain1  err.message:" +  err.message + " code :" + err.code);
-
-                //response.error("destroyAll error:" + err.message);
-              }
-            });
-          },
-          error: function(err) {
-            console.log(" chain1  err.message:" +  err.message + " code :" + err.code);
-
-            //response.error("saveAll error:" + err.message);
-          }
-        });
-
-      }
-    },
-    function(error) {
-      console.log("query unsuccessful, error:" + error.code + " " + error.message);
-    });
-}
-
-function chain2(response){
-  var MSG = Parse.Object.extend("Message");
-  var UNMSG = Parse.Object.extend("UnknownMessage");
-  var query = new Parse.Query(UNMSG);
-  query.limit(5000);
-  query.notEqualTo('replyMsg', null);
-  query.find({
-    useMasterKey: true
-  }).then(function(res) {
-      var objs = [];
-      var removeobjs = [];
-      if(res.length == 0){
-        response.success("chain2 done");
-        console.log(" chain2 res 0");
-
-      }else {
-        console.log(" chain2 res.length:" +res.length);
-
-        for (var i = 0; i < res.length; i++) {
-          var obj = res[i];
-          var msgArray = res[i].get('msg');
-          var replyMsgArray = res[i].get('replyMsg');
-          var msgChar = msgArray.join('');
-          var wc = wordcut.cut(msgChar)
-          let arr = wc.split('|');
-          var msgObj = new MSG();
-          msgObj.set("wordsArray", arr);
-          msgObj.set("msg", msgArray);
-          msgObj.set("replyMsg", replyMsgArray);
-
-          objs.push(msgObj);
-          removeobjs.push(obj);
-        }
-        Parse.Object.saveAll(objs, {
-          success: function(result) {
-            console.log("saveAll done");
-            Parse.Object.destroyAll(removeobjs, {
-              success: function(result) {
-                //response.success("chain2 done and run chain1");
-                chain1(function(r){
-
-                });
-                console.log(" chain2 done and run chain1");
-              },
-              error: function(err) {
-                //response.error("destroyAll error:" + err.message);
-                console.log(" chain2  err.message:" +  err.message);
-
-              }
-            });
-          },
-          error: function(err) {
-            //response.error("saveAll error:" + err.message);
-            console.log(" chain2  err.message:" +  err.message);
-
-          }
-        });
-
-      }
-    },
-    function(error) {
-      console.log("query unsuccessful, error:" + error.code + " " + error.message);
-    });
-}
-
-
-Parse.Cloud.define("runchain", function(request, response) {
-  chain1(function(res){
-    response.success(res);
-  });
-});
+};
